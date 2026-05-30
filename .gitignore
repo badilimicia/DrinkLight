@@ -1,0 +1,34 @@
+# Arduino build/cache output
+.arduino-build/
+build/
+*.bin
+*.elf
+*.hex
+*.map
+*.eep
+*.lst
+*.sym
+*.d
+*.o
+*.a
+
+# Local Arduino/IDE metadata
+.arduino/
+*.ino.cpp
+
+# Editor/OS local files
+.theia/
+.vscode/
+*.code-workspace
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Runtime/debug logs generated locally
+*.log
+logs/*.log
+
+# Temporary files
+*.tmp
+*.temp
+~$*
