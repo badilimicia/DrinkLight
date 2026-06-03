@@ -112,6 +112,8 @@ Configurazione in `UserConfig.h`:
 - `REMOTE_SERVICES_ENABLED`
 - `WIFI_SSID`
 - `WIFI_PASSWORD`
+- `WIFI_FALLBACK_SSID`
+- `WIFI_FALLBACK_PASSWORD`
 - `OTA_HOSTNAME`
 - `OTA_PASSWORD`
 - `REMOTE_CONSOLE_PORT`
@@ -119,6 +121,8 @@ Configurazione in `UserConfig.h`:
 - `REMOTE_CONSOLE_FULL_LOGGING`
 
 Il primo upload deve essere via USB. Dopo, Arduino IDE dovrebbe mostrare una porta di rete OTA per `OTA_HOSTNAME`.
+
+La connessione Wi-Fi prova prima `WIFI_SSID`; se non si collega entro `WIFI_CONNECT_TIMEOUT_SEC`, prova `WIFI_FALLBACK_SSID`.
 
 Telnet:
 
@@ -128,7 +132,8 @@ telnet <ip> 23
 
 La console Telnet accetta gli stessi comandi della seriale USB.
 
-`REMOTE_CONSOLE_FULL_LOGGING = true` duplica anche il logging periodico su Telnet. Questo e' richiesto dall'utente, anche se puo' aumentare carico/lag.
+`REMOTE_CONSOLE_FULL_LOGGING = true` duplica anche il logging periodico su Telnet.
+Con `false`, Telnet riceve comunque risposte ai comandi ed eventi importanti: cambi stato, bottiglia, sorsi e tap.
 
 ## Comandi console
 
@@ -152,6 +157,7 @@ cal 500     calibrazione rapida con peso noto
 cal2 0      primo punto calibrazione
 cal2 500    secondo punto calibrazione
 cal2 reset  annulla calibrazione a due punti
+calauto     calibrazione guidata a 3 punti con feedback LED
 ```
 
 Comandi brevi:
@@ -184,6 +190,15 @@ Metodo rapido:
 - `tare`
 - `cal <grammi>`
 
+Metodo guidato:
+
+- `calauto`
+- inserire tre pesi nominali quando richiesto, idealmente 0 g, un peso medio e un peso alto;
+- appoggiare ogni peso entro 10 secondi;
+- il LED mostra prompt, assestamento, sampling, successo o errore;
+- il firmware calcola offset e fattore con regressione sui tre punti;
+- copiare `SCALE_ZERO_OFFSET` e `SCALE_CALIBRATION_FACTOR`.
+
 ## LED
 
 `LedRing.*` gestisce:
@@ -214,6 +229,9 @@ Metodo rapido:
 ## Gesture tap
 
 La cella di carico rileva tap verticali/spinte rapide.
+Con `TAP_ONLY_WHEN_BOTTLE_MISSING = true`, i tap vengono rilevati solo sul puck vuoto:
+bisogna togliere la borraccia, aspettare la stabilizzazione e poi fare pressioni brevi.
+Questo rende le gesture piu' affidabili e permette di uscire dalla pausa ripetendo 4 tap sul puck vuoto.
 
 Configurazione in `UserConfig.h`:
 
@@ -228,9 +246,13 @@ Configurazione in `UserConfig.h`:
 
 Soglie tecniche in `HardwareConfig.h`:
 
+- `BOTTLE_PRESENT_SETTLE_DELTA_GRAMS`
+- `BOTTLE_PRESENT_REQUIRED_SAMPLES`
 - `TAP_DELTA_GRAMS`
 - `TAP_MAX_DELTA_GRAMS`
-- `TAP_WINDOW_MS`
+- `TAP_RELEASE_DELTA_GRAMS`
+- `TAP_SEQUENCE_GAP_MS`
+- `TAP_SEQUENCE_MAX_MS`
 - `TAP_REFRACTORY_MS`
 
 I tap sono comodi ma potenzialmente meno affidabili di un pulsante IP67, sensore Hall/reed o IMU.

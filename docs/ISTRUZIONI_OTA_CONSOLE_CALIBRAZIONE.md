@@ -38,6 +38,8 @@ Modifica questa sezione:
 static const bool REMOTE_SERVICES_ENABLED = true;
 static const char* WIFI_SSID = "NomeDelTuoWifi";
 static const char* WIFI_PASSWORD = "PasswordDelTuoWifi";
+static const char* WIFI_FALLBACK_SSID = "NomeDelWifiDiRiserva";
+static const char* WIFI_FALLBACK_PASSWORD = "PasswordWifiDiRiserva";
 static const char* OTA_HOSTNAME = "drinklight";
 static const char* OTA_PASSWORD = "scegli-una-password";
 static const uint16_t REMOTE_CONSOLE_PORT = 23;
@@ -48,6 +50,8 @@ Esempio:
 ```cpp
 static const char* WIFI_SSID = "CasaRossi";
 static const char* WIFI_PASSWORD = "passwordwifi";
+static const char* WIFI_FALLBACK_SSID = "CasaRossi_2.4";
+static const char* WIFI_FALLBACK_PASSWORD = "passwordwifi2";
 static const char* OTA_HOSTNAME = "drinklight";
 static const char* OTA_PASSWORD = "mia-password-ota";
 ```
@@ -56,6 +60,7 @@ Importante:
 
 - Il puck non crea una rete Wi-Fi.
 - Si collega al router di casa/ufficio.
+- Se la prima rete non si collega entro `WIFI_CONNECT_TIMEOUT_SEC`, prova la rete fallback.
 - Usa preferibilmente Wi-Fi 2.4 GHz.
 - Cambia `OTA_PASSWORD`.
 
@@ -155,6 +160,7 @@ tare        tara bilancia
 cal 500     calibrazione rapida con peso noto
 cal2 0      primo punto calibrazione
 cal2 500    secondo punto calibrazione
+calauto     calibrazione guidata a 3 punti
 ```
 
 I comandi brevi a singola lettera funzionano anche da Telnet:
@@ -192,7 +198,8 @@ oppure aumentare l'intervallo del logging:
 static const uint16_t TEST_SERIAL_INTERVAL_MS = 500;
 ```
 
-Con `REMOTE_CONSOLE_FULL_LOGGING = false`, Telnet riceve solo le risposte ai comandi che mandi tu.
+Con `REMOTE_CONSOLE_FULL_LOGGING = false`, Telnet riceve risposte ai comandi ed eventi importanti
+come cambi stato, bottiglia appoggiata/rimossa, sorsi e sequenze tap, ma non il logging periodico.
 
 ## 5. Come caricare sketch via OTA
 
@@ -302,6 +309,45 @@ cal2 750
 ```
 
 Devono essere pesi reali e abbastanza distanti.
+
+### Metodo guidato: `calauto`
+
+Questo metodo evita di dover mandare il comando esattamente nel momento giusto.
+Usa 3 pesi noti e una regressione sui tre punti, quindi e' il metodo piu' comodo e robusto.
+
+1. Invia:
+
+```text
+calauto
+```
+
+2. Quando chiede il primo peso, scrivi il valore in grammi, per esempio:
+
+```text
+0
+```
+
+3. Appoggia quel peso entro 10 secondi. Il LED diventa ambra durante l'assestamento e bianco durante il sampling.
+4. Quando chiede il secondo peso, scrivi il valore in grammi, per esempio:
+
+```text
+500
+```
+
+5. Appoggia quel peso entro 10 secondi.
+6. Quando chiede il terzo peso, scrivi un valore piu' alto, per esempio:
+
+```text
+1000
+```
+
+7. Appoggia quel peso entro 10 secondi. Il firmware campiona automaticamente e stampa `SCALE_ZERO_OFFSET` e `SCALE_CALIBRATION_FACTOR`.
+
+Puoi annullare con:
+
+```text
+cancel
+```
 
 ### Metodo rapido: `tare` + `cal`
 

@@ -15,15 +15,15 @@ const DrinkProfile& HydrationTracker::profile() const {
 }
 
 uint16_t HydrationTracker::targetMl() const {
-  return profile().targetMl;
+  return profile().targetMl > 0 ? profile().targetMl : 1;
 }
 
 uint16_t HydrationTracker::durationMin() const {
-  return profile().durationMin;
+  return profile().durationMin > 0 ? profile().durationMin : 1;
 }
 
 uint16_t HydrationTracker::expectedSipMl() const {
-  return profile().referenceSipMl;
+  return profile().referenceSipMl > 0 ? profile().referenceSipMl : 1;
 }
 
 void HydrationTracker::resetSession(unsigned long nowMs) {
@@ -145,6 +145,7 @@ void HydrationTracker::commitSip(uint16_t sipMl, unsigned long nowMs) {
   }
   _status.consumedMl = (uint16_t)newTotal;
   _status.lastSipMl = sipMl;
+  _status.lastSipReferenceMl = recommended;
   _status.sipDetected = true;
   if (sipMl + 10 < recommended) {
     _status.lastSipQuality = SipQuality::TooSmall;
@@ -158,11 +159,11 @@ void HydrationTracker::commitSip(uint16_t sipMl, unsigned long nowMs) {
   noteActivity(nowMs);
 }
 
-void HydrationTracker::captureBottleBaseline(float grams) {
+void HydrationTracker::captureBottleBaseline(float grams, bool captured) {
   _stableBottleWeightGrams = grams;
   _hasStableBottleWeight = true;
   _status.baselineReady = true;
-  _status.baselineCaptured = true;
+  _status.baselineCaptured = captured;
 }
 
 void HydrationTracker::setPaused(bool paused, bool automatic, unsigned long nowMs) {
@@ -236,7 +237,6 @@ HydrationStatus HydrationTracker::update(const ScaleReading& reading, unsigned l
   _status.baselineCaptured = false;
   _status.refillDetected = false;
   _status.bottleChangeDetected = false;
-  _status.lastSipMl = 0;
   _status.vibrationAllowed = true;
   updatePlanFields(nowMs);
 
@@ -294,7 +294,7 @@ HydrationStatus HydrationTracker::update(const ScaleReading& reading, unsigned l
           captureBottleBaseline(reading.grams);
         }
       } else {
-        captureBottleBaseline(reading.grams);
+        captureBottleBaseline(reading.grams, true);
         noteActivity(nowMs);
       }
     } else {

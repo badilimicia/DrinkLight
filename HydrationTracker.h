@@ -45,6 +45,7 @@ struct HydrationStatus {
   bool refillDetected = false;
   bool bottleChangeDetected = false;
   uint16_t lastSipMl = 0;
+  uint16_t lastSipReferenceMl = 0;
   SipQuality lastSipQuality = SipQuality::None;
   uint8_t profileIndex = 0;
   const char* profileName = "";
@@ -66,7 +67,7 @@ private:
   uint16_t mlFromGrams(float grams) const;
   uint16_t recommendedSip(float deficitMl, unsigned long activeElapsedMs) const;
   void commitSip(uint16_t sipMl, unsigned long nowMs);
-  void captureBottleBaseline(float grams);
+  void captureBottleBaseline(float grams, bool captured = false);
   void noteActivity(unsigned long nowMs);
   void restartAfterIdleIfNeeded(unsigned long nowMs);
   void setPaused(bool paused, bool automatic, unsigned long nowMs);

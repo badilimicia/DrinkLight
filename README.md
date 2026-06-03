@@ -5,11 +5,12 @@ DrinkLight e' un puck per borraccia che misura quanta acqua viene bevuta durante
 Il progetto e' pensato per ESP32 con Arduino IDE, senza PlatformIO: apri `DrinkLight.ino`, installa le librerie indicate sotto e carica lo sketch sulla scheda.
 
 Per la procedura completa di uso, calibrazione, OTA e console remota vedi [docs/ISTRUZIONI_OTA_CONSOLE_CALIBRAZIONE.md](docs/ISTRUZIONI_OTA_CONSOLE_CALIBRAZIONE.md).
+Per la legenda completa dell'anello LED vedi [docs/MAPPA_LUCI.md](docs/MAPPA_LUCI.md).
 
 ## Hardware previsto
 
 - ESP32.
-- Anello LED WS2812B/NeoPixel, per esempio 16 LED.
+- Anello LED WS2812B/NeoPixel, configurato di default a 8 LED.
 - Cella di carico con modulo HX711.
 - Motorino a vibrazione pilotato da transistor o MOSFET.
 - Alimentazione adeguata per LED e motorino.
@@ -66,7 +67,8 @@ Il riavvio della sessione e' automatico: se non ci sono eventi utili per `AUTO_R
 
 ## Interazioni senza pulsante touch
 
-Il firmware puo' usare la cella di carico anche come input:
+Il firmware puo' usare la cella di carico anche come input.
+Con `TAP_ONLY_WHEN_BOTTLE_MISSING = true`, togli prima la borraccia e fai i tap sul puck vuoto:
 
 - 3 tap/spinte rapide sul puck: mostra avanzamento.
 - 4 tap: pausa o riprendi.
@@ -76,11 +78,15 @@ Il firmware puo' usare la cella di carico anche come input:
 - 8 tap: reset sessione.
 - 9 o piu' tap: fine giornata.
 
+Per uscire dalla pausa manuale, togli la borraccia e ripeti la sequenza da 4 tap.
+
 Questa funzione dipende molto dalla meccanica del puck e va tarata con:
 
 - `TAP_DELTA_GRAMS`
 - `TAP_MAX_DELTA_GRAMS`
-- `TAP_WINDOW_MS`
+- `TAP_RELEASE_DELTA_GRAMS`
+- `TAP_SEQUENCE_GAP_MS`
+- `TAP_SEQUENCE_MAX_MS`
 - `TAP_REFRACTORY_MS`
 - `TAP_COUNT_PROGRESS`
 - `TAP_COUNT_PAUSE`
@@ -159,6 +165,7 @@ Comandi seriali disponibili:
 - `cal <grammi>`: calcola `SCALE_CALIBRATION_FACTOR` con un peso noto.
 - `cal2 <grammi>`: calibrazione completa a due punti, calcola offset e scale.
 - `cal2 reset`: annulla una calibrazione a due punti iniziata.
+- `calauto`: calibrazione guidata a 3 punti, con feedback LED, attesa di 10 secondi e sampling automatico per ogni peso.
 
 Da Telnet i comandi a singola lettera funzionano senza dover scrivere il nome completo, per esempio `l`, `g`, `s`, `t`, `v`, `r`.
 
@@ -170,8 +177,10 @@ In `UserConfig.h` configura:
 
 ```cpp
 static const bool REMOTE_SERVICES_ENABLED = true;
-static const char* WIFI_SSID = "DrinkLight-WiFi";
-static const char* WIFI_PASSWORD = "change-me";
+static const char* WIFI_SSID = "broggiWifi";
+static const char* WIFI_PASSWORD = "testtyyuu";
+static const char* WIFI_FALLBACK_SSID = "Broggi_WiFi_2.4";
+static const char* WIFI_FALLBACK_PASSWORD = "BroggiWifi11?";
 static const char* OTA_HOSTNAME = "drinklight";
 static const char* OTA_PASSWORD = "drinklight-ota";
 static const uint16_t REMOTE_CONSOLE_PORT = 23;
@@ -181,6 +190,7 @@ Funzioni:
 
 - OTA: dopo il primo caricamento via USB, Arduino IDE mostra una porta di rete per `drinklight`.
 - Console remota: collegati via Telnet all'IP stampato in seriale, porta `23`.
+- Wi-Fi: prova prima `WIFI_SSID`; se non si collega entro il timeout, prova `WIFI_FALLBACK_SSID`.
 - I log della `SerialConsole` vengono duplicati su USB e Telnet.
 - I comandi sono gli stessi della seriale: `status`, `grams`, `tare`, `cal2`, `light`, `reset`, ecc.
 - Il logging completo su Telnet e' controllato da `REMOTE_CONSOLE_FULL_LOGGING` in `UserConfig.h`.

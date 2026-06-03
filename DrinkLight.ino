@@ -33,7 +33,17 @@ void loop() {
   ScaleReading reading = scaleManager.update(nowMs);
   HydrationStatus currentStatus = hydration.status();
   TapCommand command = tapInput.update(reading, nowMs);
-  TapCommand serialCommand = serialConsole.update(reading, currentStatus, scaleManager, vibration, nowMs);
+  uint8_t tapCount = 0;
+  if (tapInput.takeDetectedPulse(tapCount)) {
+    serialConsole.printTapPulseDetected(tapCount);
+  }
+  if (tapInput.takeCompletedSequence(tapCount)) {
+    serialConsole.printTapSequenceDetected(tapCount);
+    if (SerialConsole::testHardwareEnabled()) {
+      ledRing.showTapSequenceFeedback(tapCount, nowMs);
+    }
+  }
+  TapCommand serialCommand = serialConsole.update(reading, currentStatus, scaleManager, ledRing, vibration, nowMs);
   if (serialCommand != TapCommand::None) {
     command = serialCommand;
   }
@@ -48,6 +58,7 @@ void loop() {
     vibration.pulse(nowMs, 70);
   }
 
+  serialConsole.printDeducedEvents(reading, status, command);
   serialConsole.printCommandDetected(command);
   serialConsole.printPeriodicStatus(reading, status, command, nowMs);
 }

@@ -23,6 +23,9 @@ struct DrinkProfile {
 };
 
 // name, target totale, durata, sorso di riferimento.
+// Il sorso di riferimento decide anche se il feedback dopo una bevuta
+// e' "piccolo", "ok" o "grande". MIN_SIP_ML in HardwareConfig.h decide
+// solo se una variazione di peso e' abbastanza grande da essere contata.
 static const DrinkProfile DRINK_PROFILES[] = {
   { "Focus", 500, 120, 70 },
   { "HalfDay", 1000, 240, 80 },
@@ -30,7 +33,7 @@ static const DrinkProfile DRINK_PROFILES[] = {
 };
 
 static const uint8_t DRINK_PROFILE_COUNT = sizeof(DRINK_PROFILES) / sizeof(DRINK_PROFILES[0]);
-static const uint8_t DEFAULT_DRINK_PROFILE_INDEX = START_PROFILE;
+static const uint8_t DEFAULT_DRINK_PROFILE_INDEX = START_PROFILE < DRINK_PROFILE_COUNT ? START_PROFILE : 0;
 
 // ------------------------------------------------------------
 // 2) Come deve ragionare sui sorsi
@@ -41,7 +44,7 @@ static const uint8_t DEFAULT_DRINK_PROFILE_INDEX = START_PROFILE;
 //   conta comunque quanto bevi, ma i reminder seguono solo il tempo.
 static const bool USE_DYNAMIC_SIP_SIZE = true;
 
-static const uint16_t MIN_RECOMMENDED_SIP_ML = 50;
+static const uint16_t MIN_RECOMMENDED_SIP_ML = 25;
 static const uint16_t MAX_RECOMMENDED_SIP_ML = 150;
 
 // ------------------------------------------------------------
@@ -68,10 +71,10 @@ enum class LightStyle {
   Vivid   // Piu' scenografico: comete e highlight, ma stessi colori.
 };
 
-static const LightStyle LIGHT_STYLE = LightStyle::Calm;
+static const LightStyle LIGHT_STYLE = LightStyle::Vivid;
 static const uint8_t LED_BRIGHTNESS = 80;               // Luminosita normale, 0..255.
 static const uint8_t LED_VIVID_BRIGHTNESS = 140;        // Limite in stile Vivid.
-static const bool VIBRATION_ENABLED = true;
+static const bool VIBRATION_ENABLED = false;
 
 // ------------------------------------------------------------
 // 5) Comandi via tap
@@ -79,8 +82,12 @@ static const bool VIBRATION_ENABLED = true;
 // Se la selezione via tap risulta scomoda, puoi disattivare tutto qui
 // e usare i comandi seriali in TEST_MODE.
 static const bool TAP_COMMANDS_ENABLED = true;
+// Sul puck vuoto le gesture sono piu' affidabili: la bottiglia non oscilla
+// e il riappoggio non puo' essere confuso con una sequenza.
+static const bool TAP_ONLY_WHEN_BOTTLE_MISSING = true;
 
-// Mappa attuale:
+// Mappa attuale. Con TAP_ONLY_WHEN_BOTTLE_MISSING=true,
+// togli prima la borraccia e fai pressioni brevi sul puck vuoto:
 // 3 tap = avanzamento
 // 4 tap = pausa/riprendi
 // 5 tap = meeting mode
@@ -114,9 +121,9 @@ enum class TestMode {
   Full
 };
 
-static const TestMode TEST_MODE = TestMode::Serial;
+static const TestMode TEST_MODE = TestMode::Full;
 static const uint16_t TEST_SERIAL_INTERVAL_MS = 100;
-static const bool TEST_VIBRATE_ON_TAP = true;
+static const bool TEST_VIBRATE_ON_TAP = false;
 
 // ------------------------------------------------------------
 // 7) Wi-Fi, OTA e console remota
@@ -125,6 +132,8 @@ static const bool TEST_VIBRATE_ON_TAP = true;
 static const bool REMOTE_SERVICES_ENABLED = true;
 static const char* WIFI_SSID = "broggiWifi";
 static const char* WIFI_PASSWORD = "testtyyuu";
+static const char* WIFI_FALLBACK_SSID = "Broggi_WiFi_2.4";
+static const char* WIFI_FALLBACK_PASSWORD = "BroggiWifi11?";
 static const char* OTA_HOSTNAME = "drinklight";
 static const char* OTA_PASSWORD = "testtyyuu";
 static const uint16_t REMOTE_CONSOLE_PORT = 23;
@@ -133,8 +142,9 @@ static const uint16_t WIFI_CONNECT_TIMEOUT_SEC = 20;
 // true:
 //   la console Telnet riceve anche il logging periodico completo.
 // false:
-//   Telnet riceve solo le risposte ai comandi, meno carico sul loop.
-static const bool REMOTE_CONSOLE_FULL_LOGGING = true;
+//   Telnet riceve risposte ai comandi ed eventi importanti
+//   (cambi stato, bottiglia, sorsi e tap), ma non il log periodico.
+static const bool REMOTE_CONSOLE_FULL_LOGGING = false;
 
 // ------------------------------------------------------------
 // Alias interni: non serve modificarli.

@@ -30,7 +30,9 @@ La meccanica conta molto: il piano superiore deve scaricare il peso sulla cella 
 
 ### Tocchi sulla cella di carico
 
-La cella di carico puo' rilevare tap verticali o spinte rapide, quindi puo' sostituire un pulsante touch esposto all'acqua. Il firmware cerca variazioni rapide di peso e le interpreta cosi':
+La cella di carico puo' rilevare tap verticali o spinte rapide, quindi puo' sostituire un pulsante touch esposto all'acqua.
+Con `TAP_ONLY_WHEN_BOTTLE_MISSING = true`, togli prima la borraccia, aspetta che il puck vuoto si stabilizzi e usa pressioni brevi.
+Questo evita che le oscillazioni della bottiglia vengano confuse con gesture. Il firmware interpreta le sequenze cosi':
 
 - 3 tap: mostra avanzamento;
 - 4 tap: pausa/riprendi;
@@ -39,6 +41,8 @@ La cella di carico puo' rilevare tap verticali o spinte rapide, quindi puo' sost
 - 7 tap: cambia profilo sessione;
 - 8 tap: reset sessione;
 - 9 o piu' tap: fine giornata.
+
+Per uscire dalla pausa manuale, togli la borraccia e ripeti 4 tap.
 
 Limiti pratici:
 
@@ -101,13 +105,19 @@ I pin sono in `HardwareConfig.h`.
 - Se fai refill, il firmware aggiorna la baseline quando vede un aumento importante di peso.
 - Usa piedini antiscivolo per evitare microspostamenti.
 - Se il peso oscilla troppo, aumenta `STABLE_DELTA_GRAMS` o `STABLE_REQUIRED_SAMPLES`.
+- Se l'appoggio della bottiglia genera falsi rimossi/appoggiati, regola `BOTTLE_REMOVE_GRAMS`,
+  `BOTTLE_PRESENT_REQUIRED_SAMPLES`, `BOTTLE_PRESENT_SETTLE_DELTA_GRAMS`,
+  `BOTTLE_MISSING_REQUIRED_SAMPLES` e `SCALE_FILTER_ALPHA`.
+- Se un tap sul puck vuoto viene scambiato per una bottiglia, riduci
+  `BOTTLE_PRESENT_SETTLE_DELTA_GRAMS` o aumenta `BOTTLE_PRESENT_REQUIRED_SAMPLES`.
 - Se conta falsi sorsi, aumenta `MIN_SIP_ML`.
 - Se ignora sorsi reali piccoli, riduci `MIN_SIP_ML`.
 - Se un cambio bottiglia viene contato come sorso, riduci `BOTTLE_CHANGE_DELTA_ML`.
 - Se il peso e' negativo quando appoggi qualcosa, cambia `SCALE_INVERT_SIGN`.
 - Se i tap non vengono rilevati, riduci `TAP_DELTA_GRAMS`.
 - Se i tap partono da soli, aumenta `TAP_DELTA_GRAMS` o riduci `TAP_MAX_DELTA_GRAMS`.
-- Se le sequenze di tap sono difficili, aumenta `TAP_WINDOW_MS`.
+- Se le sequenze di tap si chiudono troppo presto, aumenta `TAP_SEQUENCE_GAP_MS`.
+- Se un singolo colpo viene contato piu' volte, aumenta `TAP_RELEASE_DELTA_GRAMS` o `TAP_REFRACTORY_MS`.
 
 ## Evoluzione hardware utile
 
